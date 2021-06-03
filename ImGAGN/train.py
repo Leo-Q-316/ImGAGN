@@ -43,7 +43,7 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
 dataset = args.dataset
-path = "../dataset/" + dataset+"/"
+path = "../Dataset/" + dataset+"/"
 
 if dataset=='wiki':
     num = 3
