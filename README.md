@@ -15,7 +15,7 @@ This is our Pytorch implementation for the paper:
 ### *Example Usage*
 ```
 cd ImGAGN
-python train.py --dataset cora
+python train.py --dataset citeseer
 ```
 
 
