@@ -31,7 +31,7 @@ parser.add_argument('--epochs_gen', type=int, default=10,
                     help='Number of epochs to train for gen.')
 parser.add_argument('--ratio_generated', type=float, default=1,
                     help='ratio of generated nodes.')
-parser.add_argument('--dataset', choices=['cora', 'citeseer','pubmed', 'dblp', 'wiki'], default='cora')
+parser.add_argument('--dataset', choices=['cora', 'citeseer','pubmed', 'dblp', 'wiki'], default='citeseer')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -43,7 +43,7 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
 dataset = args.dataset
-path = "../Dataset/" + dataset+"/"
+path = "../dataset/" + dataset+"/"
 
 if dataset=='wiki':
     num = 3
@@ -72,7 +72,7 @@ elif dataset == 'wiki':
 
 
 def train(features, features_all, adj, adj_all):
-    global max_recall, test_recall, test_f1, test_AUC, test_acc
+    global max_recall, test_recall, test_f1, test_AUC, test_acc, test_pre
     model.train()
     optimizer.zero_grad()
     output, output_gen, output_AUC = model(features, adj)
@@ -95,16 +95,17 @@ def train(features, features_all, adj, adj_all):
         output, output_gen, output_AUC = model(features, adj)
 
 
-    recall_val, f1_val, AUC_val, acc_val = accuracy(output[idx_val], labels[idx_val], output_AUC[idx_val])
-    recall_train, f1_train, AUC_train, acc_train = accuracy(output[idx_val], labels[idx_val], output_AUC[idx_val])
+    recall_val, f1_val, AUC_val, acc_val, pre_val = accuracy(output[idx_val], labels[idx_val], output_AUC[idx_val])
+    recall_train, f1_train, AUC_train, acc_train, pre_train = accuracy(output[idx_val], labels[idx_val], output_AUC[idx_val])
 
     if max_recall < (recall_val + acc_val)/2:
         output, output_gen, output_AUC = model(features_all, adj_all)
-        recall_tmp, f1_tmp, AUC_tmp, acc_tmp = accuracy(output[idx_test], labels[idx_test], output_AUC[idx_test])
+        recall_tmp, f1_tmp, AUC_tmp, acc_tmp, pre_tmp = accuracy(output[idx_test], labels[idx_test], output_AUC[idx_test])
         test_recall = recall_tmp
         test_f1 = f1_tmp
         test_AUC = AUC_tmp
         test_acc = acc_tmp
+        test_pre = pre_tmp
         max_recall = (recall_val + acc_val)/2
 
     return recall_val, f1_val, acc_val, recall_train, f1_train, acc_train
@@ -120,7 +121,9 @@ def euclidean_dist(x, y):
     return dist
 
 
-adj, adj_real, features, labels, idx_temp, idx_test, generate_node, minority, majority, minority_all = load_data(args.ratio_generated ,path=path, dataset=dataset)
+# ratio_arr = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+# for ratio in ratio_arr:
+adj, adj_real, features, labels, idx_temp, idx_test, generate_node, minority, majority, minority_all = load_data(args.ratio_generated, path=path, dataset=dataset)
 # Model and optimizer
 model = GCN(nfeat=features.shape[1],
     nhid=args.hidden,
@@ -141,6 +144,7 @@ test_recall = 0
 test_f1 = 0
 test_AUC = 0
 test_acc=0
+test_pre =0
 
 if args.cuda:
     model.cuda()
@@ -196,7 +200,7 @@ for epoch_gen in range(args.epochs_gen):
         adj_all=adj_all.cuda()
 
     t_total = time.time()
-    model.eval()
+    # model.eval()
     output, output_gen, output_AUC = model(torch.cat((features, gen_imgs1.data),0), adj)
 
     labels_true = torch.LongTensor(num_false).fill_(0)
@@ -217,9 +221,10 @@ for epoch_gen in range(args.epochs_gen):
              + euclidean_dist(features[minority], gen_imgs1).mean()
     g_loss.backward()
     optimizer_G.step()
-
-
 print("Test Recall: ", test_recall)
 print("Test Accuracy: ", test_acc)
 print("Test F1: ", test_f1)
+print("Test precision: ", test_pre)
 print("Test AUC: ", test_AUC)
+
+

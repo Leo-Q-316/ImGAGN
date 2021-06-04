@@ -86,7 +86,8 @@ def accuracy(output, labels, output_AUC):
     f1_score = sklearn.metrics.f1_score(labels.cpu().numpy(), preds.cpu().numpy())
     AUC = sklearn.metrics.roc_auc_score(labels.cpu().numpy(), output_AUC.detach().cpu().numpy())
     acc = sklearn.metrics.accuracy_score(labels.cpu().numpy(), preds.cpu().numpy())
-    return recall, f1_score, AUC, acc
+    precision = sklearn.metrics.precision_score(labels.cpu().numpy(), preds.cpu().numpy())
+    return recall, f1_score, AUC, acc, precision
 
 
 def sparse_mx_to_torch_sparse_tensor(sparse_mx):
