@@ -4,7 +4,7 @@ import torch
 from sklearn.metrics import classification_report
 import sklearn
 
-def load_data(ratio_generated, path="../dataset/wiki/", dataset="wiki"):
+def load_data(ratio_generated, path="../dataset/citeseer/", dataset="citeseer"):
     print('Loading {} dataset...'.format(dataset))
 
     idx_features_labels = np.genfromtxt("{}features.{}".format(path, dataset),
