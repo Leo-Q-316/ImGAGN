@@ -50,7 +50,7 @@ The datasets can be downloaded from [Cora](https://relational.fit.cvut.cz/datase
     ...
     ```
 
-  - "Test.cora": each line represents the node ID in test set with the following format:
+  - "test.cora": each line represents the node ID in test set with the following format:
 
     ```
     2159
