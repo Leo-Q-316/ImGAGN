@@ -31,7 +31,7 @@ parser.add_argument('--epochs_gen', type=int, default=10,
                     help='Number of epochs to train for gen.')
 parser.add_argument('--ratio_generated', type=float, default=1,
                     help='ratio of generated nodes.')
-parser.add_argument('--dataset', choices=['cora', 'citeseer','pubmed', 'dblp', 'wiki'], default='citeseer')
+parser.add_argument('--dataset', choices=['cora', 'citeseer','pubmed', 'dblp', 'wiki'], default='cora')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -59,7 +59,7 @@ else:
     lr=0.01
 
 if dataset == 'cora':
-    weight_decay = 0.0001
+    weight_decay = 0.0008
 elif dataset == 'citeseer':
     weight_decay = 0.0005
 elif dataset == 'pubmed':
@@ -211,7 +211,7 @@ for epoch_gen in range(args.epochs_gen):
 
 
     for epoch in range(args.epochs):
-        recall_val, f1_val, acc_val, recall_train, f1_train, acc_train = train(torch.cat((features, gen_imgs1.data),0), torch.cat((features,gen_imgs1_all.data),0), adj_new, adj_all)
+        recall_val, f1_val, acc_val, recall_train, f1_train, acc_train = train(torch.cat((features, gen_imgs1.data),0), torch.cat((features,gen_imgs1.data),0), adj_new, adj_new)
     print("Epoch:", '%04d' % (epoch_gen + 1),
           "train_recall=", "{:.5f}".format(recall_train), "train_f1=", "{:.5f}".format(f1_train),"train_acc=", "{:.5f}".format(acc_train),
           "val_recall=", "{:.5f}".format(recall_val), "val_f1=", "{:.5f}".format(f1_val),"val_acc=", "{:.5f}".format(acc_val))
