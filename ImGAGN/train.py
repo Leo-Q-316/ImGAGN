@@ -71,7 +71,7 @@ elif dataset == 'wiki':
 
 
 
-def train(features, features_all, adj, adj_all):
+def train(features, adj):
     global max_recall, test_recall, test_f1, test_AUC, test_acc, test_pre
     model.train()
     optimizer.zero_grad()
@@ -99,7 +99,7 @@ def train(features, features_all, adj, adj_all):
     recall_train, f1_train, AUC_train, acc_train, pre_train = accuracy(output[idx_val], labels[idx_val], output_AUC[idx_val])
 
     if max_recall < (recall_val + acc_val)/2:
-        output, output_gen, output_AUC = model(features_all, adj_all)
+        output, output_gen, output_AUC = model(features, adj)
         recall_tmp, f1_tmp, AUC_tmp, acc_tmp, pre_tmp = accuracy(output[idx_test], labels[idx_test], output_AUC[idx_test])
         test_recall = recall_tmp
         test_f1 = f1_tmp
@@ -190,15 +190,6 @@ for epoch_gen in range(args.epochs_gen):
     if args.cuda:
         adj_new=adj_new.cuda()
 
-    matr = F.softmax(adj_min, dim=1).data.cpu().numpy()
-    pos = np.where(matr > 1 / matr.shape[1])
-    adj_temp = sp.coo_matrix((np.ones(pos[0].shape[0]), (generate_node[pos[0]].data.cpu().numpy(), minority_all[pos[1]].data.cpu().numpy())),
-        shape=(labels.shape[0], labels.shape[0]),
-        dtype=np.float32)
-    adj_all = add_edges(adj_real, adj_temp)
-    if args.cuda:
-        adj_all=adj_all.cuda()
-
     t_total = time.time()
     # model.eval()
     output, output_gen, output_AUC = model(torch.cat((features, gen_imgs1.data),0), adj)
@@ -209,18 +200,20 @@ for epoch_gen in range(args.epochs_gen):
         labels_true = labels_true.cuda()
         labels_min = labels_min.cuda()
 
-
-    for epoch in range(args.epochs):
-        recall_val, f1_val, acc_val, recall_train, f1_train, acc_train = train(torch.cat((features, gen_imgs1.data),0), torch.cat((features,gen_imgs1.data),0), adj_new, adj_new)
-    print("Epoch:", '%04d' % (epoch_gen + 1),
-          "train_recall=", "{:.5f}".format(recall_train), "train_f1=", "{:.5f}".format(f1_train),"train_acc=", "{:.5f}".format(acc_train),
-          "val_recall=", "{:.5f}".format(recall_val), "val_f1=", "{:.5f}".format(f1_val),"val_acc=", "{:.5f}".format(acc_val))
-
     g_loss = F.nll_loss(output_gen[generate_node], labels_true) \
              + F.nll_loss(output[generate_node], labels_min) \
              + euclidean_dist(features[minority], gen_imgs1).mean()
     g_loss.backward()
     optimizer_G.step()
+
+    for epoch in range(args.epochs):
+        recall_val, f1_val, acc_val, recall_train, f1_train, acc_train = train(torch.cat((features, gen_imgs1.data.detach()),0), adj_new)
+    print("Epoch:", '%04d' % (epoch_gen + 1),
+          "train_recall=", "{:.5f}".format(recall_train), "train_f1=", "{:.5f}".format(f1_train),"train_acc=", "{:.5f}".format(acc_train),
+          "val_recall=", "{:.5f}".format(recall_val), "val_f1=", "{:.5f}".format(f1_val),"val_acc=", "{:.5f}".format(acc_val))
+
+
+
 print("Test Recall: ", test_recall)
 print("Test Accuracy: ", test_acc)
 print("Test F1: ", test_f1)
